@@ -53,5 +53,3 @@ Open `index.html` in your favorite browser.
 ## Contributing
 Please ensure you do not commit your `.env` file. It is already included in `.gitignore`.
 
----
-*Built with ❤️ for Social Pro Teams*
