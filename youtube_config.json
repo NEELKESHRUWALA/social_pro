@@ -1,0 +1,30 @@
+{
+    "platform": "YouTube",
+    "api_version": "v3",
+    "auth_config": {
+        "client_id": "MOCK_CLIENT_ID_YT_PRO",
+        "scopes": [
+            "https://www.googleapis.com/auth/youtube.upload",
+            "https://www.googleapis.com/auth/youtube.readonly"
+        ]
+    },
+    "post_settings": {
+        "supported_media": ["video"],
+        "max_video_size_mb": 128,
+        "privacy_status": ["public", "unlisted", "private"],
+        "default_category": "22",
+        "category_options": [
+            {"id": "1", "name": "Film & Animation"},
+            {"id": "10", "name": "Music"},
+            {"id": "17", "name": "Sports"},
+            {"id": "20", "name": "Gaming"},
+            {"id": "22", "name": "People & Blogs"},
+            {"id": "27", "name": "Education"}
+        ]
+    },
+    "preview_defaults": {
+        "channel_name": "Social Pro User",
+        "default_title": "My Awesome Content",
+        "subscriber_count": "1.2M subscribers"
+    }
+}

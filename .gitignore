@@ -1,0 +1,23 @@
+# Sensitive info
+.env
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# Uploads and temporary files
+uploads/
+temp/
+
+# Testing
+.testsprite/
+
+# Node (if used)
+node_modules/
+dist/
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,40 @@
+fastapi
+uvicorn
+python-dotenv
+python-multipart
+requests
+
+
+I have built the backend in a highly modular, "Drop-in Ready" way so your team members can easily integrate their platform tokens and IPs without any complexity.
+
+How to use the Backend:
+Platform Configuration: Your team just needs to open the 
+
+.env
+ file and fill in the tokens and IPs for each platform.
+Service Skeletons: Each platform has a dedicated file in the services/ directory (e.g., 
+
+instagram.py
+). I have pre-structured these so they can simply drop their API calling code into the publish method.
+Unified API: The 
+
+main.py
+ file orchestrates everything. It receives the post, saves any uploaded media, and calls the respective platform services automatically.
+Frontend Connected: The 
+
+app.js
+ has been updated to send real FormData to the FastAPI backend and fetch live analytics.
+Files Created:
+
+.env
+: Central config for team members.
+
+main.py
+: FastAPI entry point.
+
+services/instagram.py
+ (and others): Platform-specific logic skeletons.
+
+requirements.txt
+: Backend dependencies.
+Your team can now start the backend with python main.py and immediately begin testing the automated publishing flow!
