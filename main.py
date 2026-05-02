@@ -119,7 +119,8 @@ async def yt_upload_video(
     client_json: UploadFile = File(...),
     title: str = Form(...),
     description: str = Form(...),
-    tags: str = Form("")
+    tags: str = Form(""),
+    category_id: str = Form(...)
 ):
     try:
         # Save files
@@ -139,7 +140,7 @@ async def yt_upload_video(
             file_path=video_path,
             title=title,
             description=description,
-            category_id="22",
+            category_id=category_id,
             privacy="public",
             tags=tags.split(",") if tags else []
         )
