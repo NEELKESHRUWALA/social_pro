@@ -29,7 +29,7 @@
 
         <nav class="flex items-center gap-1 bg-white/5 p-1 rounded-xl">
             <a href="#" onclick="switchTab('dashboard')" id="nav-dashboard"
-                class="px-6 py-2 rounded-lg text-sm font-medium transition-all hover:bg-white/5 active-nav">Dashboard</a>
+                class="px-6 py-2 rounded-lg text-sm font-medium transition-all hover:bg-white/5 active">Dashboard</a>
             <a href="#" onclick="switchTab('analytics')" id="nav-analytics"
                 class="px-6 py-2 rounded-lg text-sm font-medium transition-all hover:bg-white/5">Analytics</a>
             <a href="#" onclick="switchTab('settings')" id="nav-settings"
@@ -127,19 +127,19 @@
                                     <i data-lucide="eye" class="w-4 h-4 text-indigo-400"></i> Live Preview
                                 </h3>
                                 <div class="flex gap-2 bg-white/5 p-1 rounded-xl">
-                                    <button onclick="setPreviewPlatform('instagram')"
+                                    <button onclick="setPreviewPlatform('instagram', this)"
                                         class="flex items-center gap-2 px-4 py-1.5 rounded-lg hover:bg-white/10 transition-all preview-tab active text-xs font-semibold">
                                         <i data-lucide="instagram" class="w-3.5 h-3.5 text-pink-500"></i> Instagram
                                     </button>
-                                    <button onclick="setPreviewPlatform('facebook')"
+                                    <button onclick="setPreviewPlatform('facebook', this)"
                                         class="flex items-center gap-2 px-4 py-1.5 rounded-lg hover:bg-white/10 transition-all preview-tab text-xs font-semibold">
                                         <i data-lucide="facebook" class="w-3.5 h-3.5 text-blue-500"></i> Facebook
                                     </button>
-                                    <button onclick="setPreviewPlatform('linkedin')"
+                                    <button onclick="setPreviewPlatform('linkedin', this)"
                                         class="flex items-center gap-2 px-4 py-1.5 rounded-lg hover:bg-white/10 transition-all preview-tab text-xs font-semibold">
                                         <i data-lucide="linkedin" class="w-3.5 h-3.5 text-sky-500"></i> LinkedIn
                                     </button>
-                                    <button onclick="setPreviewPlatform('youtube')"
+                                    <button onclick="setPreviewPlatform('youtube', this)"
                                         class="flex items-center gap-2 px-4 py-1.5 rounded-lg hover:bg-white/10 transition-all preview-tab text-xs font-semibold">
                                         <i data-lucide="youtube" class="w-3.5 h-3.5 text-red-500"></i> YouTube
                                     </button>

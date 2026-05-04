@@ -197,8 +197,8 @@ section > *:nth-child(3) { animation-delay: 0.3s; }
     opacity: 1;
 }
 
-/* Active Nav Glow */
-.active-nav {
+/* Active State for Tabs and Nav */
+.active {
     background: var(--primary-glow) !important;
     color: var(--primary) !important;
     box-shadow: 0 0 20px rgba(99, 102, 241, 0.1);

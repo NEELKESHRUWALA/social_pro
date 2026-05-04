@@ -28,12 +28,12 @@ const previewTexts = {
 
 captionInput.addEventListener('input', updatePreview);
 
-function setPreviewPlatform(platform) {
+function setPreviewPlatform(platform, el) {
     // Update tabs
     document.querySelectorAll('.preview-tab').forEach(btn => {
         btn.classList.remove('active');
     });
-    event.currentTarget.classList.add('active');
+    el.classList.add('active');
 
     // Update visibility
     document.querySelectorAll('.mockup-content').forEach(el => {
