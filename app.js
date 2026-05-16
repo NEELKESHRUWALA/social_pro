@@ -1,0 +1,657 @@
+// Initialize Lucide icons
+lucide.createIcons();
+
+// Tab Switching Logic
+function switchTab(tabName) {
+    const sections = ['dashboard', 'analytics', 'settings'];
+    sections.forEach(s => {
+        document.getElementById(`tab-${s}`).classList.add('hidden');
+        document.getElementById(`nav-${s}`).classList.remove('active');
+    });
+
+    document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+    document.getElementById(`nav-${tabName}`).classList.add('active');
+
+    if (tabName === 'analytics') {
+        initCharts();
+    }
+}
+
+// Live Preview Logic
+const captionInput = document.getElementById('post-caption');
+const previewTexts = {
+    instagram: document.getElementById('preview-text-instagram'),
+    facebook: document.getElementById('preview-text-facebook'),
+    linkedin: document.getElementById('preview-text-linkedin'),
+    youtube: document.getElementById('preview-text-youtube')
+};
+
+captionInput.addEventListener('input', updatePreview);
+
+function setPreviewPlatform(platform, el) {
+    // Update tabs
+    document.querySelectorAll('.preview-tab').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    el.classList.add('active');
+
+    // Update visibility
+    document.querySelectorAll('.mockup-content').forEach(el => {
+        el.classList.add('hidden');
+    });
+    document.getElementById(`preview-${platform}`).classList.remove('hidden');
+}
+
+// Charting Logic
+let perfChart, distChart;
+async function initCharts() {
+    if (perfChart) perfChart.destroy();
+    if (distChart) distChart.destroy();
+
+    try {
+        const response = await fetch('http://127.0.0.1:8000/api/analytics');
+        const data = await response.json();
+
+        const ctxPerf = document.getElementById('performanceChart').getContext('2d');
+        perfChart = new Chart(ctxPerf, {
+            type: 'line',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                datasets: [{
+                    label: 'Reach',
+                    data: data.reach,
+                    borderColor: '#6366F1',
+                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 3,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#6366F1'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: 'rgba(255, 255, 255, 0.4)' } },
+                    x: { grid: { display: false }, ticks: { color: 'rgba(255, 255, 255, 0.4)' } }
+                }
+            }
+        });
+
+        const ctxDist = document.getElementById('distributionChart').getContext('2d');
+        distChart = new Chart(ctxDist, {
+            type: 'doughnut',
+            data: {
+                labels: ['Instagram', 'Facebook', 'LinkedIn', 'YouTube'],
+                datasets: [{
+                    data: data.engagement,
+                    backgroundColor: ['#EC4899', '#3B82F6', '#0EA5E9', '#EF4444'],
+                    borderWidth: 0,
+                    hoverOffset: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: 'rgba(255, 255, 255, 0.6)',
+                            padding: 20,
+                            font: { size: 12 }
+                        }
+                    }
+                },
+                cutout: '70%'
+            }
+        });
+    } catch (error) {
+        console.error('Failed to load analytics:', error);
+    }
+}
+
+// Drag and Drop Logic
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+let selectedFiles = [];
+
+dropZone.onclick = () => fileInput.click();
+
+dropZone.ondragover = (e) => {
+    e.preventDefault();
+    dropZone.classList.add('border-indigo-500');
+};
+
+dropZone.ondragleave = () => {
+    dropZone.classList.remove('border-indigo-500');
+};
+
+dropZone.ondrop = (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('border-indigo-500');
+    handleFiles(e.dataTransfer.files);
+};
+
+fileInput.onchange = (e) => {
+    handleFiles(e.target.files);
+};
+
+// Paste Event Listener
+window.addEventListener('paste', (e) => {
+    const items = e.clipboardData.items;
+    const imageFiles = [];
+    
+    for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+            imageFiles.push(items[i].getAsFile());
+        }
+    }
+    
+    if (imageFiles.length > 0) {
+        handleFiles(imageFiles);
+    }
+});
+
+
+function handleFiles(files) {
+    selectedFiles = Array.from(files);
+    console.log('Files selected:', selectedFiles);
+    validatePlatforms();
+    
+    // Update UI to show filename
+    if (selectedFiles.length > 0) {
+        const text = dropZone.querySelector('p:first-of-type');
+        text.innerText = `${selectedFiles.length} file(s) selected: ${selectedFiles[0].name}`;
+        
+        // Update Preview Media
+        const file = selectedFiles[0];
+        const reader = new FileReader();
+        
+        reader.onload = async (e) => {
+            const url = e.target.result;
+            const containers = ['preview-media-container', 'preview-media-fb', 'preview-media-li', 'preview-media-yt'];
+            
+            containers.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                
+                if (file.type.startsWith('image')) {
+                    el.innerHTML = `<img src="${url}" class="w-full h-full object-cover">`;
+                } else if (file.type.startsWith('video')) {
+                    el.innerHTML = `<video src="${url}" class="w-full h-full object-cover" autoplay muted loop></video>`;
+                    if (id === 'preview-media-yt') {
+                         el.innerHTML += `<div class="absolute inset-0 bg-black/20 flex items-center justify-center"><i data-lucide="play" class="w-8 h-8 text-white"></i></div>`;
+                         lucide.createIcons();
+                    }
+                }
+            });
+
+            // Trigger AI Generation if it's an image
+            if (file.type.startsWith('image')) {
+                generateAIContent(file);
+            }
+
+            // Auto-save media to draft
+            saveDraft(true);
+        };
+        
+        reader.readAsDataURL(file);
+    }
+}
+
+async function generateAIContent(file) {
+    const captionInput = document.getElementById('post-caption');
+    const hashtagInput = document.getElementById('hashtag-input');
+    
+    // Show loading state in UI
+    const originalPlaceholder = captionInput.placeholder;
+    captionInput.placeholder = "AI is thinking... ✨";
+    captionInput.classList.add('animate-pulse');
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+        const response = await fetch('http://127.0.0.1:8000/api/generate_content', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.caption) {
+            let finalCaption = data.caption;
+            
+            // Append hashtags directly to the caption
+            if (data.hashtags && data.hashtags.length > 0) {
+                finalCaption += '\n\n' + data.hashtags.join(' ');
+            }
+            
+            captionInput.value = finalCaption;
+            updatePreview();
+        }
+
+        // Success Toast
+        const toast = document.getElementById('success-toast');
+        toast.querySelector('p:first-of-type').innerText = "AI Generated Content";
+        toast.querySelector('p:last-of-type').innerText = "Caption and hashtags updated automatically";
+        showToast();
+
+    } catch (error) {
+        console.error('AI Generation failed:', error);
+    } finally {
+        captionInput.placeholder = originalPlaceholder;
+        captionInput.classList.remove('animate-pulse');
+    }
+}
+
+
+// Validation Logic (YouTube Requirement)
+function validatePlatforms() {
+    const ytCheckbox = document.getElementById('yt-checkbox');
+    const ytWarning = document.getElementById('yt-warning');
+    const publishBtn = document.getElementById('publish-btn');
+    
+    let hasVideo = selectedFiles.some(f => f.type.includes('video'));
+    
+    if (ytCheckbox.checked && !hasVideo) {
+        ytWarning.classList.remove('hidden');
+        publishBtn.disabled = true;
+        publishBtn.classList.add('opacity-50', 'cursor-not-allowed');
+    } else {
+        ytWarning.classList.add('hidden');
+        publishBtn.disabled = false;
+        publishBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+    }
+}
+
+// Publish Logic (Mock)
+// Token Management
+function saveTokens() {
+    const settings = {
+        igToken: document.getElementById('ig-token').value,
+        igUserId: document.getElementById('ig-user-id').value,
+        fbToken: document.getElementById('fb-token').value,
+        fbPageId: document.getElementById('fb-page-id').value,
+        ytCategory: document.getElementById('yt-category').value,
+        liToken: document.getElementById('li-token').value,
+        liOrgId: document.getElementById('li-org-id').value
+    };
+    localStorage.setItem('socialProSettings', JSON.stringify(settings));
+    
+    const toast = document.getElementById('success-toast');
+    const title = toast.querySelector('p:first-of-type');
+    const sub = toast.querySelector('p:last-of-type');
+    title.innerText = "Settings Saved";
+    sub.innerText = "API configurations updated successfully";
+    showToast();
+}
+
+function loadTokens() {
+    const settingsJson = localStorage.getItem('socialProSettings');
+    if (!settingsJson) return;
+    const s = JSON.parse(settingsJson);
+    
+    if (document.getElementById('ig-token')) document.getElementById('ig-token').value = s.igToken || '';
+    if (document.getElementById('ig-user-id')) document.getElementById('ig-user-id').value = s.igUserId || '';
+    if (document.getElementById('fb-token')) document.getElementById('fb-token').value = s.fbToken || '';
+    if (document.getElementById('fb-page-id')) document.getElementById('fb-page-id').value = s.fbPageId || '';
+    if (document.getElementById('yt-category')) document.getElementById('yt-category').value = s.ytCategory || '22';
+    if (document.getElementById('li-token')) document.getElementById('li-token').value = s.liToken || '';
+    if (document.getElementById('li-org-id')) document.getElementById('li-org-id').value = s.liOrgId || '';
+}
+
+async function testConnection(platform) {
+    alert(`Testing ${platform} connection... (Check backend logs)`);
+}
+
+// Publish Logic (Real API - Sequential Platform Execution)
+async function publishContent() {
+    const btn = document.getElementById('publish-btn');
+    const originalContent = btn.innerHTML;
+    
+    const selectedPlatforms = Array.from(document.querySelectorAll('input[name="platform"]:checked'))
+        .map(cb => cb.value);
+
+    if (selectedPlatforms.length === 0) {
+        alert("Please select at least one platform.");
+        return;
+    }
+    const caption = document.getElementById('post-caption').value;
+    const hashtagContainer = document.getElementById('hashtag-container');
+    const uiHashtags = Array.from(hashtagContainer.querySelectorAll('.hashtag-tag > span'))
+        .map(el => el.innerText.trim())
+        .filter(t => t.length > 0)
+        .join(' ');
+    
+    // Combine caption and UI hashtags, but if AI generated them in caption, it handles it.
+    const fullCaption = caption + (uiHashtags ? '\n\n' + uiHashtags : '');
+
+    // Extract all hashtags from the fullCaption to pass to YouTube as tags
+    const extractedTagsMatch = fullCaption.match(/#[a-zA-Z0-9_]+/g) || [];
+    const extractedTags = extractedTagsMatch.map(t => t.replace('#', '')).join(',');
+
+    btn.innerHTML = '<i data-lucide="refresh-cw" class="w-5 h-5 animate-spin"></i> Initializing...';
+    lucide.createIcons();
+    btn.disabled = true;
+
+    const results = [];
+    const settings = JSON.parse(localStorage.getItem('socialProSettings') || '{}');
+
+    for (const platform of selectedPlatforms) {
+        btn.innerHTML = `<i data-lucide="refresh-cw" class="w-5 h-5 animate-spin"></i> Publishing to ${platform.charAt(0).toUpperCase() + platform.slice(1)}...`;
+        lucide.createIcons();
+
+        try {
+            let endpoint = '';
+            const formData = new FormData();
+            
+            if (platform === 'facebook') {
+                if (selectedFiles.length > 0) {
+                    const isVideo = selectedFiles[0].type.includes('video');
+                    endpoint = isVideo ? '/fb/video_post' : '/fb/image_post';
+                    formData.append('file', selectedFiles[0]);
+                    formData.append('caption', fullCaption);
+                    formData.append('description', fullCaption); // For video
+                } else {
+                    endpoint = '/fb/text_post';
+                    formData.append('text', fullCaption);
+                }
+                formData.append('access_token', settings.fbToken || '');
+                formData.append('page_id', settings.fbPageId || '');
+
+            } else if (platform === 'instagram') {
+                if (selectedFiles.length > 0) {
+                    const isVideo = selectedFiles[0].type.includes('video');
+                    endpoint = isVideo ? '/ig/video_post' : '/ig/image_post';
+                    formData.append('file', selectedFiles[0]);
+                    formData.append('caption', fullCaption);
+                    formData.append('access_token', settings.igToken || '');
+                    formData.append('ig_user_id', settings.igUserId || '');
+                } else {
+                    throw new Error("Instagram requires an image or video");
+                }
+
+            } else if (platform === 'youtube') {
+                if (selectedFiles.length > 0 && selectedFiles[0].type.includes('video')) {
+                    endpoint = '/yt/upload_video';
+                    formData.append('file', selectedFiles[0]);
+                    
+                    // First line as title, rest as description
+                    const lines = fullCaption.split('\n');
+                    const title = lines[0].substring(0, 100); 
+                    const description = fullCaption;
+                    
+                    formData.append('title', title || 'New Video');
+                    formData.append('description', description || '');
+                    
+                    // Use dynamically extracted tags
+                    formData.append('tags', extractedTags); 
+                    
+                    formData.append('categoryId', settings.ytCategory || '22');
+                    formData.append('privacyStatus', 'public');
+                } else {
+                    throw new Error("YouTube requires a video file");
+                }
+            } else if (platform === 'linkedin') {
+                console.warn("LinkedIn API integration is currently a backend stub.");
+                results.push({ platform, status: 'skipped', message: 'Backend integration pending' });
+                continue;
+            }
+
+            const response = await fetch(`http://127.0.0.1:8000${endpoint}`, {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+            results.push({ platform, status: response.ok ? 'success' : 'error', data });
+
+        } catch (error) {
+            console.error(`${platform} publishing failed:`, error);
+            results.push({ platform, status: 'error', message: error.message });
+        }
+    }
+
+    console.log('Final Publish Results:', results);
+    
+    const successCount = results.filter(r => r.status === 'success').length;
+    if (successCount > 0) {
+        showToast();
+        resetForm();
+    } else {
+        alert("Failed to publish content. Check console for details.");
+    }
+
+    btn.innerHTML = originalContent;
+    btn.disabled = false;
+    lucide.createIcons();
+}
+
+function showToast() {
+    const toast = document.getElementById('success-toast');
+    toast.classList.remove('translate-y-20', 'opacity-0');
+    
+    setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+    }, 4000);
+}
+
+function resetForm() {
+    document.getElementById('post-caption').value = '';
+    Object.values(previewTexts).forEach(el => {
+        if (el) el.innerText = 'Your caption will appear here...';
+    });
+    
+    const containers = ['preview-media-container', 'preview-media-fb', 'preview-media-li', 'preview-media-yt'];
+    containers.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = '<i data-lucide="image" class="w-8 h-8 text-white/10"></i>';
+    });
+    lucide.createIcons();
+
+    selectedFiles = [];
+    dropZone.querySelector('p:first-of-type').innerText = 'Drag & drop images or video';
+    
+    // Clear Hashtags
+    Array.from(hashtagContainer.querySelectorAll('.hashtag-tag')).forEach(el => el.remove());
+    hashtagInput.value = '';
+    
+    validatePlatforms();
+    saveDraft(true);
+}
+
+// Hashtag Logic
+const hashtagInput = document.getElementById('hashtag-input');
+const hashtagContainer = document.getElementById('hashtag-container');
+
+hashtagInput.onkeydown = (e) => {
+    if ((e.key === 'Enter' || e.key === ' ' || e.key === ',') && hashtagInput.value.trim()) {
+        e.preventDefault();
+        const rawValue = hashtagInput.value.trim();
+        addHashtags(rawValue);
+        hashtagInput.value = '';
+    }
+};
+
+function addHashtags(value) {
+    const tags = value.split(/[\s,]+/).filter(t => t.length > 0);
+    tags.forEach(t => {
+        let tagText = t;
+        if (!tagText.startsWith('#')) tagText = '#' + tagText;
+        
+        // Avoid duplicates
+        const existing = Array.from(hashtagContainer.querySelectorAll('span:not(#hashtag-input) > span'))
+            .some(el => el.innerText.trim() === tagText);
+        if (existing) return;
+
+        const tag = document.createElement('span');
+        tag.className = 'hashtag-tag px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 text-xs border border-indigo-500/20 flex items-center gap-2 group animate-fade-in';
+        tag.innerHTML = `<span>${tagText}</span> <i data-lucide="x" class="w-3 h-3 cursor-pointer opacity-50 group-hover:opacity-100 transition-all" onclick="this.parentElement.remove(); updatePreview()"></i>`;
+        hashtagContainer.insertBefore(tag, hashtagInput);
+    });
+    lucide.createIcons();
+    updatePreview();
+    saveDraft(true);
+}
+
+
+// Helper to update all previews
+function updatePreview() {
+    const text = captionInput.value || 'Your caption will appear here...';
+    const hashtags = Array.from(hashtagContainer.querySelectorAll('.hashtag-tag > span'))
+        .map(el => el.innerText.trim())
+        .filter(t => t.length > 0)
+        .join(' ');
+
+    const fullContent = text + (hashtags ? '\n\n' + hashtags : '');
+
+    Object.values(previewTexts).forEach(el => {
+        if (el) {
+            if (el.id === 'preview-text-youtube') {
+                el.innerText = text; // Youtube usually shows title separate from description
+            } else {
+                el.innerText = fullContent;
+            }
+        }
+    });
+}
+
+captionInput.addEventListener('input', updatePreview);
+
+// Mouse move for ambient glow
+document.addEventListener('mousemove', (e) => {
+    const cards = document.querySelectorAll('.glass-card');
+    cards.forEach(card => {
+        const rect = card.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+        card.style.setProperty('--mouse-x', `${x}%`);
+        card.style.setProperty('--mouse-y', `${y}%`);
+    });
+});
+
+// Draft Persistence Logic
+async function saveDraft(isAutoSave = false) {
+    const caption = document.getElementById('post-caption').value;
+    const platforms = Array.from(document.querySelectorAll('input[name="platform"]:checked'))
+        .map(cb => cb.value);
+    const hashtags = Array.from(hashtagContainer.querySelectorAll('span:not(#hashtag-input)'))
+        .map(el => el.innerText.trim());
+
+    const draft = { caption, platforms, hashtags };
+
+    // Handle Media Persistence (Store as Base64 in draft)
+    if (selectedFiles.length > 0) {
+        const file = selectedFiles[0];
+        draft.mediaName = file.name;
+        draft.mediaType = file.type;
+        
+        // Convert to base64 if it's small enough (roughly < 4MB)
+        if (file.size < 4 * 1024 * 1024) {
+            try {
+                draft.mediaData = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+            } catch (e) {
+                console.warn("Could not save media to draft", e);
+            }
+        }
+    }
+
+    try {
+        localStorage.setItem('socialProDraft', JSON.stringify(draft));
+        if (!isAutoSave) {
+            showDraftToast();
+        }
+    } catch (e) {
+        console.warn("Draft too large for localStorage, saving without media");
+        delete draft.mediaData;
+        localStorage.setItem('socialProDraft', JSON.stringify(draft));
+    }
+}
+
+function showDraftToast() {
+    const toast = document.getElementById('success-toast');
+    const toastTitle = toast.querySelector('p:first-of-type');
+    const toastSub = toast.querySelector('p:last-of-type');
+    
+    const originalText = toastTitle.innerText;
+    const originalSub = toastSub.innerText;
+    
+    toastTitle.innerText = "Draft Saved";
+    toastSub.innerText = "Your post has been saved locally";
+    
+    showToast();
+    
+    setTimeout(() => {
+        toastTitle.innerText = originalText;
+        toastSub.innerText = originalSub;
+    }, 5000);
+}
+
+async function loadDraft() {
+    const draftJson = localStorage.getItem('socialProDraft');
+    if (!draftJson) return;
+
+    try {
+        const draft = JSON.parse(draftJson);
+        
+        // Load caption
+        document.getElementById('post-caption').value = draft.caption || '';
+        
+        // Load platforms
+        const allPlatforms = document.querySelectorAll('input[name="platform"]');
+        allPlatforms.forEach(cb => {
+            cb.checked = (draft.platforms || []).includes(cb.value);
+        });
+        
+        // Load hashtags
+        Array.from(hashtagContainer.querySelectorAll('span:not(#hashtag-input)')).forEach(el => el.remove());
+        (draft.hashtags || []).forEach(value => {
+            const tag = document.createElement('span');
+            tag.className = 'px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 text-xs border border-indigo-500/20 flex items-center gap-2 group animate-fade-in';
+            tag.innerHTML = `<span>${value}</span> <i data-lucide="x" class="w-3 h-3 cursor-pointer opacity-50 group-hover:opacity-100 transition-all" onclick="this.parentElement.remove(); updatePreview(); saveDraft(true)"></i>`;
+            hashtagContainer.insertBefore(tag, hashtagInput);
+        });
+        
+        // Load Media
+        if (draft.mediaData) {
+            const res = await fetch(draft.mediaData);
+            const blob = await res.blob();
+            const file = new File([blob], draft.mediaName, { type: draft.mediaType });
+            
+            // This will trigger the handleFiles logic (previews + state)
+            handleFiles([file]);
+        }
+        
+        lucide.createIcons();
+        updatePreview();
+        validatePlatforms();
+    } catch (e) {
+        console.error("Failed to load draft:", e);
+    }
+}
+
+// Auto-save triggers for caption and platforms
+captionInput.addEventListener('input', () => {
+    saveDraft(true);
+});
+
+document.querySelectorAll('input[name="platform"]').forEach(cb => {
+    cb.addEventListener('change', () => {
+        saveDraft(true);
+    });
+});
+
+// Start on Dashboard
+switchTab('dashboard');
+loadTokens();
+loadDraft();
+updatePreview();
